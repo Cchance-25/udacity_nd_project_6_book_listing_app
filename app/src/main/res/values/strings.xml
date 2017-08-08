@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">udacity_nd_project_6_book_listing_app</string>
+    <string name="no_internet_connection">No Internet connection. please try again later.</string>
+</resources>
