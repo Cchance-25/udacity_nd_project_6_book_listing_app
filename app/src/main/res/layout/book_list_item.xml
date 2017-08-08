@@ -23,9 +23,9 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="32dp"
         android:layout_marginTop="6dp"
-        android:textSize="18sp"
-        android:maxLines="2"
         android:ellipsize="end"
-        tools:text="Universe, physical study" />
+        android:maxLines="2"
+        android:textSize="18sp"
+        tools:text="John smith" />
 
 </LinearLayout>

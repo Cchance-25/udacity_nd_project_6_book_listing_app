@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(View v) {
                     String userQuery = editText.getText().toString();
                     if(userQuery.equals("")) {
-                        errorMessage.setText("No data found! enter another search");
+                        errorMessage.setText(R.string.no_data);
                         return;
                     }
                     progrssbar.setVisibility(View.VISIBLE);
@@ -99,7 +99,6 @@ public class MainActivity extends AppCompatActivity {
                 if (con.getResponseCode() == 200) {
                     inputStream = new BufferedInputStream(con.getInputStream());
                     String response = parseJsonToString(inputStream);
-                    Log.e(TAG, response);
                     extractFeatures(response);
                 }
 
