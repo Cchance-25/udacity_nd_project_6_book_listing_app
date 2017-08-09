@@ -30,14 +30,16 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String REQUEST_URL = "https://www.googleapis.com/books/v1/volumes?q=history&maxResults=30";
+    private static final int READ_TIMEOUT = 10000;
+    private static final int CONNECTION_TIMEOUT = 10000;
     private ArrayList<Book> booksList;
-    private ListAdapter a;
+    private ListAdapter adapter;
     private ListView lv;
     private String searchQuery;
     private EditText editText;
     private TextView errorMessage;
     private View progrssbar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,34 +49,48 @@ public class MainActivity extends AppCompatActivity {
         editText = (EditText) findViewById(R.id.search_books);
         errorMessage = (TextView) findViewById(R.id.error_message);
         progrssbar = findViewById(R.id.progress_bar);
-        a = new ListAdapter(this, booksList);
+        adapter = new ListAdapter(this, booksList);
+
         lv = (ListView) findViewById(R.id.books_list);
+
         Button btn = (Button) findViewById(R.id.find_btn);
         progrssbar.setVisibility(View.GONE);
+
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String userQuery = editText.getText().toString();
+                if (userQuery.equals("")) {
+                    errorMessage.setText(R.string.no_data);
+                    return;
+                }
+                progrssbar.setVisibility(View.VISIBLE);
+                errorMessage.setVisibility(View.GONE);
+                searchQuery = "https://www.googleapis.com/books/v1/volumes?q=" + userQuery + "&maxResults=30";
+                Log.e(TAG, searchQuery);
+                if (isConnected()) {
+                    BookAsyncTask b = new BookAsyncTask();
+                    b.execute(searchQuery);
+                }
+            }
+        });
+    }
+
+    private boolean isConnected() {
+        boolean isConnected = false;
         ConnectivityManager connectivityManager = (ConnectivityManager)
                 getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        if(networkInfo != null && networkInfo.isConnected()) {
-            btn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    String userQuery = editText.getText().toString();
-                    if(userQuery.equals("")) {
-                        errorMessage.setText(R.string.no_data);
-                        return;
-                    }
-                    progrssbar.setVisibility(View.VISIBLE);
-                    errorMessage.setVisibility(View.GONE);
-                    searchQuery = "https://www.googleapis.com/books/v1/volumes?q=" + userQuery + "&maxResults=30";
-                    BookAsyncTask b = new BookAsyncTask();
-                    b.execute(searchQuery);
-                    Log.e(TAG, searchQuery);
-                }
-            });
+
+        if (networkInfo != null && networkInfo.isConnected()) {
+            isConnected = true;
+            return isConnected;
         } else {
             progrssbar.setVisibility(View.GONE);
+            booksList.clear();
             errorMessage.setText(R.string.no_internet_connection);
-
+            errorMessage.setVisibility(View.VISIBLE);
+            return isConnected;
         }
     }
 
@@ -84,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class BookAsyncTask extends AsyncTask<String, Void, Void> {
+
         @Override
         protected Void doInBackground(String... params) {
             InputStream inputStream;
@@ -93,10 +110,10 @@ public class MainActivity extends AppCompatActivity {
             try {
                 con = (HttpURLConnection) url.openConnection();
                 con.setRequestMethod("GET");
-                con.setReadTimeout(10000);
-                con.setConnectTimeout(15000);
+                con.setReadTimeout(READ_TIMEOUT);
+                con.setConnectTimeout(CONNECTION_TIMEOUT);
                 con.connect();
-                if (con.getResponseCode() == 200) {
+                if (con.getResponseCode() == HttpURLConnection.HTTP_OK) {
                     inputStream = new BufferedInputStream(con.getInputStream());
                     String response = parseJsonToString(inputStream);
                     extractFeatures(response);
@@ -109,10 +126,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
+        protected void onPreExecute() {
+            booksList.clear();
+        }
+
+        @Override
         protected void onPostExecute(Void aVoid) {
-            lv.setAdapter(a);
+            lv.setAdapter(adapter);
             progrssbar.setVisibility(View.GONE);
         }
+
 
         private String parseJsonToString(InputStream inputStream) throws IOException {
 
@@ -154,8 +177,8 @@ public class MainActivity extends AppCompatActivity {
                         String bookTitle = book.getString("title");
                         if (book.has("authors")) { // books have either author or publisher
                             JSONArray authorsArray = book.getJSONArray("authors");
-                            for(int j=0; j<authorsArray.length(); j++) {
-                                authors.append(authorsArray.getString(j));
+                            for (int j = 0; j < authorsArray.length(); j++) {
+                                authors.append(authorsArray.getString(j) + ", ");
                             }
                         } else if (book.has("publisher")) {
                             authors.append(book.getString("publisher"));

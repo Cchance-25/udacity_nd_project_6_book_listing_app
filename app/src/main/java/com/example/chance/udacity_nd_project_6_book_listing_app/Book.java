@@ -4,12 +4,10 @@ package com.example.chance.udacity_nd_project_6_book_listing_app;
  * Created by chance on 8/6/17.
  */
 
-
 public class Book {
     private String mBookTitle;
     private String mBookAuthor;
     private int mBookImage;
-
 
     public Book(String mBookTitle, String mBookAuthor) {
         this.mBookTitle = mBookTitle;
